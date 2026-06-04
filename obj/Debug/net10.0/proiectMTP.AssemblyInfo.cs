@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("proiectMTP")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3df57112063243412e1cb5b752a3dfdaf4524288")]
 [assembly: System.Reflection.AssemblyProductAttribute("proiectMTP")]
 [assembly: System.Reflection.AssemblyTitleAttribute("proiectMTP")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
