@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+# User-specific / IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Environment / secrets
+appsettings.*.local.json
+*.env
