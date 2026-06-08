@@ -1,6 +1,22 @@
 @proiectMTP_HostAddress = http://localhost:5015
 
-GET {{proiectMTP_HostAddress}}/weatherforecast/
-Accept: application/json
+### Register a new professor account
+POST {{proiectMTP_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "password": "secret123"
+}
+
+### Login with an existing account
+POST {{proiectMTP_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ada@example.com",
+  "password": "secret123"
+}
 
 ###
