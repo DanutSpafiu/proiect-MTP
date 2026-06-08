@@ -28,6 +28,7 @@ public class SessionService : ISessionService
         {
             Title = req.Title,
             Description = req.Description,
+            Date = req.Date,
             StudentId = req.StudentId,
             ProfessorId = professorId
         };
@@ -70,6 +71,12 @@ public class SessionService : ISessionService
 
         session.Title = req.Title;
         session.Description = req.Description;
+
+        if (session.Date != req.Date)
+        {
+            session.Date = req.Date;
+            session.SentReminder = true;
+        }
 
         if (req.File is not null)
         {

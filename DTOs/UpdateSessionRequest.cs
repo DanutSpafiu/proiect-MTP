@@ -9,6 +9,9 @@ public class UpdateSessionRequest
 
     public string? Description { get; set; }
 
+    [Required]
+    public DateTime Date { get; set; }
+
     public IFormFile? File { get; set; }
 
     public bool RemoveFile { get; set; }

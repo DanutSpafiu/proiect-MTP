@@ -10,6 +10,9 @@ obj/
 # Uploaded session files
 uploads/
 
+# Environment variables / secrets
+.env
+
 # User-specific / IDE
 .vs/
 .idea/

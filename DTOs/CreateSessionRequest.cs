@@ -12,5 +12,8 @@ public class CreateSessionRequest
 
     public string? Description { get; set; }
 
+    [Required]
+    public DateTime Date { get; set; }
+
     public IFormFile? File { get; set; }
 }

@@ -9,6 +9,8 @@ public class SessionResponse
     public int ProfessorId { get; set; }
     public required string Title { get; set; }
     public string? Description { get; set; }
+    public DateTime Date { get; set; }
+    public bool SentReminder { get; set; }
     public string? FileName { get; set; }
     public bool HasFile { get; set; }
 
@@ -19,6 +21,8 @@ public class SessionResponse
         ProfessorId = session.ProfessorId,
         Title = session.Title,
         Description = session.Description,
+        Date = session.Date,
+        SentReminder = session.SentReminder,
         FileName = session.FileName,
         HasFile = session.StoredPath is not null
     };
