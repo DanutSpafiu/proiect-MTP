@@ -10,6 +10,11 @@ public enum SessionStatus
 public class Session
 {
     public int Id { get; set; }
+    public required string Title { get; set; }
+    public string? Description { get; set; }
+    public string? FileName { get; set; }
+    public string? StoredPath { get; set; }
+    public string? ContentType { get; set; }
     public DateTime Date { get; set; }
     public int Duration { get; set; }
     public string? Subject { get; set; }
