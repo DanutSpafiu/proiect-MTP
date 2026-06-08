@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using proiectMTP.Data;
 using proiectMTP.DTOs;
@@ -125,6 +126,67 @@ public class SessionService : ISessionService
             absolutePath,
             session.ContentType ?? "application/octet-stream",
             session.FileName ?? "download");
+    }
+
+    public async Task<StudentStatsResponse> GetStatsAsync(int professorId, int studentId)
+    {
+        var sessions = await _db.Sessions
+            .Where(s => s.ProfessorId == professorId && s.StudentId == studentId)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+
+        var ordered = sessions
+            .Select(s => DateTime.SpecifyKind(s.Date, DateTimeKind.Utc))
+            .OrderBy(d => d)
+            .ToList();
+
+        var past = ordered.Where(d => d <= now).ToList();
+        var upcoming = ordered.Where(d => d > now).ToList();
+        var withFile = sessions.Count(s => s.StoredPath is not null);
+
+        DateTime? first = ordered.Count > 0 ? ordered[0] : null;
+        DateTime? lastPast = past.Count > 0 ? past[^1] : null;
+        DateTime? nextUp = upcoming.Count > 0 ? upcoming[0] : null;
+        int? daysSinceLast = lastPast is not null
+            ? (int)Math.Floor((now - lastPast.Value).TotalDays)
+            : null;
+
+        var months = new List<MonthlyCount>();
+        var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        for (var i = 5; i >= 0; i--)
+        {
+            var m = monthStart.AddMonths(-i);
+            months.Add(new MonthlyCount
+            {
+                Year = m.Year,
+                Month = m.Month - 1,
+                Label = m.ToString("MMM", CultureInfo.InvariantCulture),
+                Count = 0
+            });
+        }
+
+        foreach (var d in ordered)
+        {
+            var bucket = months.FirstOrDefault(b => b.Year == d.Year && b.Month == d.Month - 1);
+            if (bucket is not null)
+                bucket.Count++;
+        }
+
+        return new StudentStatsResponse
+        {
+            Total = sessions.Count,
+            UpcomingCount = upcoming.Count,
+            WithFile = withFile,
+            WithFilePercent = sessions.Count == 0
+                ? 0
+                : (int)Math.Round((double)withFile / sessions.Count * 100),
+            FirstSession = first,
+            LastSession = lastPast,
+            NextSession = nextUp,
+            DaysSinceLast = daysSinceLast,
+            Months = months
+        };
     }
 
     private async Task AttachFileAsync(Session session, IFormFile file)

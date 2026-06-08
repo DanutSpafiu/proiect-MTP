@@ -21,7 +21,7 @@ public class SessionResponse
         ProfessorId = session.ProfessorId,
         Title = session.Title,
         Description = session.Description,
-        Date = session.Date,
+        Date = DateTime.SpecifyKind(session.Date, DateTimeKind.Utc),
         SentReminder = session.SentReminder,
         FileName = session.FileName,
         HasFile = session.StoredPath is not null

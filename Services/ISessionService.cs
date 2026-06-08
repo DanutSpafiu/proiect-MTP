@@ -12,4 +12,5 @@ public interface ISessionService
     Task<SessionResponse?> UpdateAsync(int professorId, int id, UpdateSessionRequest req);
     Task<bool> DeleteAsync(int professorId, int id);
     Task<SessionFileResult?> GetFileAsync(int professorId, int id);
+    Task<StudentStatsResponse> GetStatsAsync(int professorId, int studentId);
 }

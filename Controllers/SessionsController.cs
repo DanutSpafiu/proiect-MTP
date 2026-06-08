@@ -27,6 +27,13 @@ public class SessionsController : ControllerBase
         return Ok(sessions);
     }
 
+    [HttpGet("stats")]
+    public async Task<ActionResult<StudentStatsResponse>> GetStats([FromQuery] int studentId)
+    {
+        var stats = await _sessionService.GetStatsAsync(CurrentProfessorId, studentId);
+        return Ok(stats);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<SessionResponse>> GetById(int id)
     {

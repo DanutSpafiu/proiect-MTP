@@ -1,16 +1,93 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  getStudent, getSessions, createSession, updateSession,
+  getStudent, getSessions, getStudentStats, createSession, updateSession,
   deleteSession, downloadSessionFile
 } from '../api'
 
-const emptyForm = { title: '', description: '', date: '', file: null, removeFile: false }
+const emptyForm = { title: '', description: '', date: '', time: '', file: null, removeFile: false }
 
-function toInputDate(iso) {
+function pad(n) {
+  return String(n).padStart(2, '0')
+}
+
+function toFormDate(iso) {
   const d = new Date(iso)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+}
+
+function toFormTime(iso) {
+  const d = new Date(iso)
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function parseFormDateTime(dateStr, timeStr) {
+  const dm = dateStr.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (!dm) return null
+  const [, dd, mm, yyyy] = dm
+  const tm = (timeStr || '').trim().match(/^(\d{1,2}):(\d{2})$/)
+  const hours = tm ? Number(tm[1]) : 0
+  const minutes = tm ? Number(tm[2]) : 0
+  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), hours, minutes)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function formatDate(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+}
+
+function formatDateTime(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function relativeDays(days) {
+  if (days === null || days === undefined) return '—'
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  return `${days} days ago`
+}
+
+function TrendChart({ data }) {
+  const max = Math.max(1, ...data.map((d) => d.count))
+  const W = 480
+  const H = 170
+  const padX = 20
+  const padTop = 24
+  const padBottom = 28
+  const barW = (W - padX * 2) / data.length
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="trend" role="img" aria-label="Sessions per month">
+      {data.map((d, i) => {
+        const h = (d.count / max) * (H - padTop - padBottom)
+        const x = padX + i * barW
+        const y = H - padBottom - h
+        return (
+          <g key={`${d.year}-${d.month}`}>
+            <rect x={x + 6} y={y} width={barW - 12} height={h} fill="#0366d6" rx="3" />
+            {d.count > 0 && (
+              <text x={x + barW / 2} y={y - 5} textAnchor="middle" fontSize="11" fill="#222">{d.count}</text>
+            )}
+            <text x={x + barW / 2} y={H - 8} textAnchor="middle" fontSize="11" fill="#777">{d.label}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function Stat({ value, label, sub }) {
+  return (
+    <div className="stat">
+      <div className="value">{value}</div>
+      <div className="label">{label}</div>
+      {sub && <div className="sub">{sub}</div>}
+    </div>
+  )
 }
 
 export default function StudentDetailPage() {
@@ -18,6 +95,7 @@ export default function StudentDetailPage() {
   const navigate = useNavigate()
   const [student, setStudent] = useState(null)
   const [sessions, setSessions] = useState([])
+  const [stats, setStats] = useState(null)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -26,9 +104,10 @@ export default function StudentDetailPage() {
   async function load() {
     setError('')
     try {
-      const [st, ss] = await Promise.all([getStudent(id), getSessions(id)])
+      const [st, ss, stat] = await Promise.all([getStudent(id), getSessions(id), getStudentStats(id)])
       setStudent(st)
       setSessions(ss)
+      setStats(stat)
     } catch (err) {
       setError(err.message)
     }
@@ -47,7 +126,8 @@ export default function StudentDetailPage() {
     setForm({
       title: s.title,
       description: s.description || '',
-      date: s.date ? toInputDate(s.date) : '',
+      date: s.date ? toFormDate(s.date) : '',
+      time: s.date ? toFormTime(s.date) : '',
       file: null,
       removeFile: false
     })
@@ -63,11 +143,16 @@ export default function StudentDetailPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    const when = parseFormDateTime(form.date, form.time)
+    if (!when) {
+      setError('Enter the date as dd/mm/yyyy and a valid time.')
+      return
+    }
     try {
       const fd = new FormData()
       fd.append('Title', form.title)
       fd.append('Description', form.description || '')
-      fd.append('Date', new Date(form.date).toISOString())
+      fd.append('Date', when.toISOString())
       if (form.file) fd.append('File', form.file)
       if (editingId) {
         fd.append('RemoveFile', form.removeFile ? 'true' : 'false')
@@ -113,6 +198,22 @@ export default function StudentDetailPage() {
 
       {error && <p className="error">{error}</p>}
 
+      <h2>Statistics</h2>
+      {!stats || stats.total === 0 ? (
+        <p className="muted">No data yet. Add a session to see statistics.</p>
+      ) : (
+        <>
+          <div className="stat-grid">
+            <Stat value={stats.total} label="Total sessions" />
+            <Stat value={stats.upcomingCount} label="Upcoming" sub={stats.nextSession ? `next ${formatDate(stats.nextSession)}` : 'none scheduled'} />
+            <Stat value={relativeDays(stats.daysSinceLast)} label="Last session" sub={stats.lastSession ? formatDate(stats.lastSession) : undefined} />
+            <Stat value={formatDate(stats.firstSession)} label="First session" />
+            <Stat value={stats.withFile} label="With materials" sub={`${stats.withFilePercent}% of sessions`} />
+          </div>
+          <TrendChart data={stats.months} />
+        </>
+      )}
+
       <h2>Sessions</h2>
       <button onClick={startCreate}>Add session</button>
 
@@ -125,8 +226,19 @@ export default function StudentDetailPage() {
           <label>Description
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
-          <label>Date &amp; time
-            <input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+          <label>Date
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="dd/mm/yyyy"
+              pattern="\d{2}/\d{2}/\d{4}"
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              required
+            />
+          </label>
+          <label>Time
+            <input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required />
           </label>
           <label>File
             <input type="file" onChange={(e) => setForm({ ...form, file: e.target.files[0] || null })} />
@@ -155,7 +267,7 @@ export default function StudentDetailPage() {
             {sessions.map((s) => (
               <tr key={s.id}>
                 <td>{s.title}</td>
-                <td>{new Date(s.date).toLocaleString()}</td>
+                <td>{formatDateTime(s.date)}</td>
                 <td>{s.description || '-'}</td>
                 <td>{s.hasFile ? <button className="link" onClick={() => handleDownload(s)}>{s.fileName}</button> : '-'}</td>
                 <td>{s.sentReminder ? 'Sent' : 'Pending'}</td>

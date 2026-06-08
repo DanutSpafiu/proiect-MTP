@@ -67,6 +67,7 @@ export const updateStudent = (id, data) => request(`/students/${id}`, { method: 
 export const deleteStudent = (id) => request(`/students/${id}`, { method: 'DELETE' })
 
 export const getSessions = (studentId) => request(`/sessions?studentId=${studentId}`)
+export const getStudentStats = (studentId) => request(`/sessions/stats?studentId=${studentId}`)
 export const createSession = (formData) => request('/sessions', { method: 'POST', body: formData, isForm: true })
 export const updateSession = (id, formData) => request(`/sessions/${id}`, { method: 'PUT', body: formData, isForm: true })
 export const deleteSession = (id) => request(`/sessions/${id}`, { method: 'DELETE' })
