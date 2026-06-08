@@ -76,7 +76,7 @@ public class SessionService : ISessionService
         if (session.Date != req.Date)
         {
             session.Date = req.Date;
-            session.SentReminder = true;
+            session.SentReminder = false;
         }
 
         if (req.File is not null)
